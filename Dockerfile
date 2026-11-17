@@ -4,8 +4,9 @@ COPY package*.json ./
 RUN npm ci --omit=dev --ignore-scripts
 COPY src ./src
 COPY docs ./docs
+COPY migrations ./migrations
 RUN mkdir -p data && chown node:node data
 USER node
-ENV HOST=0.0.0.0 PORT=3000 DATA_FILE=/app/data/estacoes.json
+ENV HOST=0.0.0.0 PORT=3000
 EXPOSE 3000
 CMD ["node", "src/server.cjs"]

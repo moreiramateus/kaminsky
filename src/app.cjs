@@ -1,12 +1,12 @@
 const http = require('node:http');
-const path = require('node:path');
+const { StationRepository } = require('./repository.cjs');
 const { cadastro } = require('./stations.cjs');
 const swagger = require('./swagger.cjs');
 const autenticar = require('./auth.cjs');
 const UUID = /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
 const TTL = 15 * 60 * 1000;
 
-function criarServidor({ consultar = fetch, agora = Date.now, readApiKey = process.env.API_KEY_READ, adminApiKey = process.env.API_KEY_ADMIN, arquivo = process.env.DATA_FILE || path.join(__dirname, '..', 'data', 'estacoes.json') } = {}) {
+function criarServidor({ consultar = fetch, agora = Date.now, readApiKey = process.env.API_KEY_READ, adminApiKey = process.env.API_KEY_ADMIN, repositorio = new StationRepository() } = {}) {
   const autorizado = autenticar({ readApiKey, adminApiKey });
   const cache = new Map();
   const pendentes = new Map();
@@ -44,7 +44,7 @@ function criarServidor({ consultar = fetch, agora = Date.now, readApiKey = proce
     pendentes.set(id, tarefa);
     try { return await tarefa; } finally { pendentes.delete(id); }
   }
-  const gerenciar = cadastro({ arquivo, obter, agora });
+  const gerenciar = cadastro({ repositorio, obter, agora });
   return http.createServer(async (req, res) => {
     const enviar = (status, dados) => {
       res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' });

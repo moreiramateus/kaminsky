@@ -1,3 +1,4 @@
+const { memoryRepository } = require('./helpers/repository.cjs');
 const API_KEY = 'teste-local-chave-segura-com-32-caracteres';
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
@@ -5,7 +6,7 @@ const { criarServidor } = require('../src/app.cjs');
 const ID = '0b4bc246-d54a-47a7-8abf-cbe8ad2d882b';
 test('dados originais, cache, atraso e erros HTTP', async () => {
   let tempo = 1800000000000, chamadas = 0, falhar = false;
-  const servidor = criarServidor({ adminApiKey: API_KEY, readApiKey: API_KEY + '-read', agora: () => tempo, consultar: async () => {
+  const servidor = criarServidor({ repositorio: memoryRepository(), adminApiKey: API_KEY, readApiKey: API_KEY + '-read', agora: () => tempo, consultar: async () => {
     chamadas++;
     if (falhar) throw new Error('falha simulada');
     return { ok: true, json: async () => ({ sStation: 'Teste', dailyRain: '0.06', rainUnit: 'in', temperature: '78', temperatureUnit: '&deg;F', humidity: '69', lastTimestamp: 1799999900 }) };

@@ -121,6 +121,16 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "Cadastro PostgreSQL indisponível ou limite de consultas à fonte",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
           }
         }
       },
@@ -243,7 +253,7 @@
             }
           },
           "503": {
-            "description": "Limite de consultas simultâneas",
+            "description": "Cadastro PostgreSQL indisponível ou limite de consultas à fonte",
             "content": {
               "application/json": {
                 "schema": {
@@ -312,6 +322,16 @@
           },
           "404": {
             "description": "Não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Cadastro PostgreSQL indisponível ou limite de consultas à fonte",
             "content": {
               "application/json": {
                 "schema": {
@@ -441,7 +461,7 @@
             }
           },
           "503": {
-            "description": "Limite de consultas simultâneas",
+            "description": "Cadastro PostgreSQL indisponível ou limite de consultas à fonte",
             "content": {
               "application/json": {
                 "schema": {
@@ -586,7 +606,7 @@
             }
           },
           "503": {
-            "description": "Limite de consultas simultâneas",
+            "description": "Cadastro PostgreSQL indisponível ou limite de consultas à fonte",
             "content": {
               "application/json": {
                 "schema": {
@@ -674,6 +694,16 @@
           },
           "500": {
             "description": "Erro de persistência",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Cadastro PostgreSQL indisponível ou limite de consultas à fonte",
             "content": {
               "application/json": {
                 "schema": {
@@ -775,7 +805,7 @@
             }
           },
           "503": {
-            "description": "Limite de consultas simultâneas",
+            "description": "Cadastro PostgreSQL indisponível ou limite de consultas à fonte",
             "content": {
               "application/json": {
                 "schema": {
@@ -869,7 +899,7 @@
             }
           },
           "503": {
-            "description": "Limite de consultas simultâneas",
+            "description": "Cadastro PostgreSQL indisponível ou limite de consultas à fonte",
             "content": {
               "application/json": {
                 "schema": {

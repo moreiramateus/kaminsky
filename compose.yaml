@@ -1,0 +1,33 @@
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: kaminsky
+      POSTGRES_USER: kaminsky
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Configure POSTGRES_PASSWORD}
+    ports:
+      - '127.0.0.1:54329:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U kaminsky -d kaminsky']
+      interval: 5s
+      timeout: 5s
+      retries: 15
+  api:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3000
+      DATABASE_URL: postgresql://kaminsky:${POSTGRES_PASSWORD}@db:5432/kaminsky
+      API_KEY_READ: ${API_KEY_READ:?Configure API_KEY_READ}
+      API_KEY_ADMIN: ${API_KEY_ADMIN:?Configure API_KEY_ADMIN}
+    ports:
+      - '127.0.0.1:3000:3000'
+volumes:
+  postgres_data:

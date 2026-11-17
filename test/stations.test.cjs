@@ -1,3 +1,4 @@
+const { memoryRepository } = require('./helpers/repository.cjs');
 const API_KEY = 'teste-local-chave-segura-com-32-caracteres';
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
@@ -6,11 +7,11 @@ const os = require('node:os');
 const path = require('node:path');
 const { criarServidor } = require('../src/app.cjs');
 const { normalizar } = require('../src/stations.cjs');
-test('CRUD persistente e consulta pelo ID próprio', async () => {
+test('CRUD e consulta pelo ID próprio', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'chuva-test-'));
   const arquivo = path.join(dir, 'estacoes.json');
   const fonte = { sStation:'Teste', windSpeed:'10', windSpeedUnit:'mph', lastTimestamp:Date.now()/1000 };
-  const config = { arquivo, consultar: async () => ({ok:true,json:async()=>fonte}) };
+  const config = { repositorio: memoryRepository(), consultar: async () => ({ok:true,json:async()=>fonte}) };
   let s=criarServidor({ ...config, adminApiKey: API_KEY, readApiKey: API_KEY + '-read' });
   const iniciar=async()=>{await new Promise(r=>s.listen(0,'127.0.0.1',r));return 'http://127.0.0.1:'+s.address().port;};
   let base=await iniciar();

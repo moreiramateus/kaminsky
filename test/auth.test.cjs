@@ -1,13 +1,14 @@
+const { memoryRepository } = require('./helpers/repository.cjs');
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { criarServidor } = require('../src/app.cjs');
 const readApiKey = 'leitura-exclusiva-de-teste-com-mais-de-32';
 const adminApiKey = 'admin-exclusiva-de-teste-com-mais-de-32';
 test('perfis leitura e administrativo e configuração obrigatória', async () => {
-  assert.throws(() => criarServidor({readApiKey:'',adminApiKey}), /API_KEY_READ/);
-  assert.throws(() => criarServidor({readApiKey,adminApiKey:'curta'}), /API_KEY_ADMIN/);
-  assert.throws(() => criarServidor({readApiKey,adminApiKey:readApiKey}), /diferentes/);
-  const s = criarServidor({readApiKey,adminApiKey});
+  assert.throws(() => criarServidor({ repositorio: memoryRepository(),readApiKey:'',adminApiKey}), /API_KEY_READ/);
+  assert.throws(() => criarServidor({ repositorio: memoryRepository(),readApiKey,adminApiKey:'curta'}), /API_KEY_ADMIN/);
+  assert.throws(() => criarServidor({ repositorio: memoryRepository(),readApiKey,adminApiKey:readApiKey}), /diferentes/);
+  const s = criarServidor({ repositorio: memoryRepository(),readApiKey,adminApiKey});
   await new Promise(r => s.listen(0,'127.0.0.1',r));
   const base = 'http://127.0.0.1:'+s.address().port;
   try {

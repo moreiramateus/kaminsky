@@ -103,7 +103,7 @@ Mais de 2 horas sem medição: `ativa: false`, `data: null` e `original: null`, 
 
 ## Persistência
 
-Cadastros ficam em `estacoes.json`, gravado via arquivo temporário e substituição. Reiniciar perde apenas o cache. Preserve esse arquivo ao migrar. Execute uma única instância com esse arquivo; múltiplos processos escritores não são suportados. DELETE remove apenas o cadastro local.
+Cadastro em PostgreSQL via DATABASE_URL. IDs são preservados na importação do JSON legado. UUID WeatherLink tem restrição de unicidade. Edições usam queries parametrizadas e gravações atômicas. Medições não são persistidas. Veja o README para Docker, migração e backup.
 
 ## Erros
 
@@ -118,7 +118,7 @@ Formato: `{"erro":"Descrição"}`.
 | 413 | Corpo acima de 16 KB |
 | 415 | Envie application/json nas escritas |
 | 502 | Fonte indisponível ou resposta inválida |
-| 503 | Quatro consultas simultâneas à fonte em andamento |
+| 503 | Fonte limitada a quatro consultas simultâneas ou cadastro PostgreSQL indisponível |
 | 504 | Fonte excedeu 15 segundos |
 
 ## Testar

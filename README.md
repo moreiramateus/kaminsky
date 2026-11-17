@@ -9,6 +9,7 @@ Requer Node.js 22 ou superior.
 ```sh
 npm ci --ignore-scripts
 # Configure API_KEY_READ e API_KEY_ADMIN no .env antes de iniciar
+docker compose up -d db
 npm start
 ```
 
@@ -24,7 +25,8 @@ O Swagger UI é servido localmente pelo pacote instalado, sem CDN nem envio do c
 |---|---|---|
 | HOST | 127.0.0.1 | Endereço de escuta |
 | PORT | 3000 | Porta |
-| DATA_FILE | data/estacoes.json | Arquivo persistente de cadastro |
+| DATABASE_URL | Obrigatória | Conexão PostgreSQL |
+| POSTGRES_PASSWORD | Obrigatória no Compose | Senha do banco local |
 
 Copie `.env.example` para `.env` e defina API_KEY_READ e API_KEY_ADMIN aleatórias e diferentes. npm start carrega o .env automaticamente; variáveis já exportadas têm precedência.
 
@@ -50,11 +52,12 @@ curl -H 'X-API-Key: SUA_CHAVE' http://127.0.0.1:3000/estacoes/ID_RETORNADO/dados
 ```text
 src/server.cjs     Inicialização e encerramento do processo
 src/app.cjs        HTTP, cache e integração WeatherLink
-src/stations.cjs   Cadastro, persistência e normalização
+src/stations.cjs   Rotas de cadastro e normalização
 src/swagger.cjs    Interface Swagger e assets locais
 docs/             Referência e contrato OpenAPI
 test/             Testes HTTP com fonte simulada
-data/             Cadastros locais (ignorados pelo Git)
+src/repository.cjs Persistência PostgreSQL com queries parametrizadas
+migrations/       Schema versionado
 scripts/          Validação do contrato
 ```
 
@@ -68,11 +71,10 @@ npm run docs:validate
 ## Docker
 
 ```sh
-docker build -t kaminsky .
-docker run --rm --env-file .env -e HOST=0.0.0.0 -e DATA_FILE=/app/data/estacoes.json -p 127.0.0.1:3000:3000 -v kaminsky-data:/app/data kaminsky
+docker compose up -d --build
 ```
 
-Use uma única instância por arquivo de cadastro. Faça backup do volume antes de migrar.
+O volume postgres_data mantém os cadastros. Não execute docker compose down -v se deseja preservá-los. Faça backup com pg_dump.
 
 ## Limites atuais
 
@@ -104,3 +106,28 @@ Guarde em `.env` (ignorado pelo Git), ou nos segredos da hospedagem. npm start c
 Swagger: clique em Authorize e preencha apenas um dos perfis por vez. Ambos usam o mesmo cabeçalho; não autorize os dois simultaneamente. A chave administrativa também funciona em GET. O Swagger não persiste a chave entre recarregamentos.
 
 `/`, `/health`, `/docs` e `/openapi.json` são públicos. Todas as rotas de estações, inclusive a rota antiga `/chuva`, exigem autenticação. Para revogar ou trocar uma chave, altere a variável correspondente e reinicie. Esta versão tem uma chave por perfil, sem usuários individuais ou auditoria por cliente.
+
+## PostgreSQL e migração
+
+O cadastro usa PostgreSQL por meio de um pool `pg` com cinco conexões por instância. Há chave primária UUID e restrição UNIQUE no UUID WeatherLink. As queries recebem parâmetros separados do SQL. Edições parciais atualizam somente os campos enviados; o banco impede duplicação concorrente.
+
+Configure DATABASE_URL e as duas API Keys no .env. Para o PostgreSQL do Compose, gere POSTGRES_PASSWORD hexadecimal e use a mesma senha em DATABASE_URL com host 127.0.0.1 e porta 54329. O Compose substitui o host por db dentro da rede dos containers. A porta do banco fica acessível apenas no computador local. Senhas com caracteres reservados precisam de URL encoding em DATABASE_URL.
+
+```sh
+docker compose up -d db
+npm run db:migrate
+npm run db:import -- data/estacoes.json
+npm start
+```
+
+A importação do arquivo JSON anterior é opcional, transacional e preserva IDs e datas. Pode ser repetida: cadastros com os mesmos IDs são ignorados, sem sobrescrever alterações no banco. Conflitos de identificação abortam a importação inteira. O JSON original não é alterado e não é mais usado em tempo de execução.
+
+A API prepara a tabela de cadastro ao iniciar; falha na conexão impede iniciar. Esta primeira migração é idempotente. Futuras alterações de schema devem usar novas migrações. Para hospedagem gerenciada, configure TLS com validação de certificado conforme o provedor, por exemplo sslmode=verify-full na URL, e um usuário com permissões restritas. O usuário criado pela imagem Docker é destinado ao ambiente local.
+
+```sh
+npm test
+npm run test:db
+npm run docs:validate
+```
+
+O teste de banco usa registros com UUIDs aleatórios e remove somente esses registros. O CI executa o teste em PostgreSQL real. Cache permanece em memória por instância, por 15 minutos; não há tabelas de medições nem histórico.

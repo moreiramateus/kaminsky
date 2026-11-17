@@ -1,5 +1,3 @@
-const fs = require('node:fs');
-const path = require('node:path');
 const { randomUUID } = require('node:crypto');
 const UUID = /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
 function erro(status, mensagem) { return Object.assign(new Error(mensagem), { status }); }
@@ -40,22 +38,13 @@ async function corpo(req) {
   const texto = Buffer.concat(partes).toString('utf8');
   try { const d = JSON.parse(texto); if (!d || typeof d !== 'object' || Array.isArray(d)) throw 0; return d; } catch { throw erro(400, 'JSON inválido.'); }
 }
-function cadastro({ arquivo, obter, agora }) {
-  let registros = fs.existsSync(arquivo) ? JSON.parse(fs.readFileSync(arquivo, 'utf8')) : [];
-  if (!Array.isArray(registros)) throw new Error('Cadastro de estações inválido.');
-  function salvar(novos) {
-    fs.mkdirSync(path.dirname(arquivo), { recursive: true });
-    const temp = arquivo + '.tmp';
-    try {
-      fs.writeFileSync(temp, JSON.stringify(novos, null, 2), { mode: 0o600 });
-      fs.renameSync(temp, arquivo); registros = novos;
-    } catch { throw erro(500, 'Não foi possível salvar o cadastro.'); }
-  }
+function cadastro({ repositorio, obter, agora }) {
   return async (req, url, enviar) => {
     const m = url.pathname.match(/^\/estacoes(?:\/([^/]+)(?:\/(dados))?)?\/?$/);
     if (!m) return false;
     const id = m[1], consulta = m[2];
-    const registro = id && registros.find(x => x.id === id);
+    if (id && !UUID.test(id)) throw erro(404, 'Estação cadastrada não encontrada.');
+    const registro = id && await repositorio.obter(id);
     if (id && !registro) throw erro(404, 'Estação cadastrada não encontrada.');
     if (consulta) {
       if (req.method !== 'GET') throw erro(405, 'Use GET para consultar dados.');
@@ -67,8 +56,8 @@ function cadastro({ arquivo, obter, agora }) {
       if (url.searchParams.get('original') === '1') saida.original = ativa === false ? null : r.dados.data;
       enviar(200, saida); return true;
     }
-    if (req.method === 'GET') { enviar(200, id ? registro : { data: registros, total: registros.length }); return true; }
-    if (req.method === 'DELETE' && id) { salvar(registros.filter(x => x.id !== id)); enviar(200, { id, excluida: true }); return true; }
+    if (req.method === 'GET') { const lista = id ? null : await repositorio.listar(); enviar(200, id ? registro : { data: lista, total: lista.length }); return true; }
+    if (req.method === 'DELETE' && id) { if (!await repositorio.excluir(id)) throw erro(404, 'Estação cadastrada não encontrada.'); enviar(200, { id, excluida: true }); return true; }
     if ((req.method === 'POST' && !id) || (req.method === 'PATCH' && id) || (req.method === 'PUT' && id)) {
       const d = await corpo(req);
       const permitidos = ['nome','url','weatherlink_id','habilitada'];
@@ -80,14 +69,19 @@ function cadastro({ arquivo, obter, agora }) {
       if (d.url !== undefined && d.weatherlink_id !== undefined && origem(d.url) !== origem(d.weatherlink_id)) throw erro(400, 'URL e weatherlink_id divergentes.');
       let nomeFonte;
       if (!registro || novoId !== registro.weatherlink_id) nomeFonte = (await obter(novoId)).dados.nome;
-      // Revalida após a consulta assíncrona para impedir duplicações concorrentes.
-      if (registro && !registros.some(x => x.id === id)) throw erro(409, 'Cadastro foi excluído durante a consulta.');
-      if (registros.some(x => x.weatherlink_id === novoId && x.id !== id)) throw erro(409, 'Estação já cadastrada.');
-      const atual = id ? registros.find(x => x.id === id) : null;
       const instante = new Date(agora()).toISOString();
-      const novo = { id: atual?.id || randomUUID(), weatherlink_id: novoId, nome: d.nome?.trim() ?? atual?.nome ?? nomeFonte, habilitada: d.habilitada ?? atual?.habilitada ?? true, criado_em: atual?.criado_em || instante, atualizado_em: instante };
-      salvar(atual ? registros.map(x => x.id === id ? novo : x) : [...registros, novo]);
-      enviar(atual ? 200 : 201, novo); return true;
+      let novo;
+      if (registro) {
+        const alteracoes = {};
+        if (d.url !== undefined || d.weatherlink_id !== undefined) alteracoes.weatherlink_id = novoId;
+        if (d.nome !== undefined) alteracoes.nome = d.nome.trim();
+        if (d.habilitada !== undefined) alteracoes.habilitada = d.habilitada;
+        novo = await repositorio.editar(id, alteracoes);
+        if (!novo) throw erro(404, 'Estação cadastrada não encontrada.');
+      } else {
+        novo = await repositorio.criar({ id: randomUUID(), weatherlink_id: novoId, nome: d.nome?.trim() ?? nomeFonte, habilitada: d.habilitada ?? true, criado_em: instante, atualizado_em: instante });
+      }
+      enviar(registro ? 200 : 201, novo); return true;
     }
     throw erro(405, 'Método não permitido para esta rota.');
   };

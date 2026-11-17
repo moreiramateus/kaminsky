@@ -2,10 +2,12 @@ const http = require('node:http');
 const path = require('node:path');
 const { cadastro } = require('./stations.cjs');
 const swagger = require('./swagger.cjs');
+const autenticar = require('./auth.cjs');
 const UUID = /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
 const TTL = 15 * 60 * 1000;
 
-function criarServidor({ consultar = fetch, agora = Date.now, arquivo = process.env.DATA_FILE || path.join(__dirname, '..', 'data', 'estacoes.json') } = {}) {
+function criarServidor({ consultar = fetch, agora = Date.now, apiKey = process.env.API_KEY, arquivo = process.env.DATA_FILE || path.join(__dirname, '..', 'data', 'estacoes.json') } = {}) {
+  const autorizado = autenticar(apiKey);
   const cache = new Map();
   const pendentes = new Map();
   async function obter(id) {
@@ -50,6 +52,11 @@ function criarServidor({ consultar = fetch, agora = Date.now, arquivo = process.
     };
     try {
       const url = new URL(req.url, 'http://localhost');
+      const publica = ['/', '/health', '/docs', '/docs/', '/openapi.json', '/docs/swagger-ui.css', '/docs/swagger-ui-bundle.js'].includes(url.pathname);
+      if (!publica && !autorizado(req)) {
+        res.setHeader('WWW-Authenticate', 'ApiKey realm="kaminsky"');
+        return enviar(401, { erro: 'API Key ausente ou inválida. Envie X-API-Key.' });
+      }
       if (swagger(req, url, res)) return;
       if (await gerenciar(req, url, enviar)) return;
       if (req.method !== 'GET') return enviar(405, { erro: 'Método não permitido.' });

@@ -3,7 +3,7 @@
   "info": {
     "title": "Kaminsky Weather API",
     "version": "1.0.0",
-    "description": "CRUD de estações e consulta do card WeatherLink. Cache de 15 minutos sob demanda, sem coleta agendada nem histórico. Dados com mais de 2 horas retornam data:null. API local de estudo, sem autenticação; não exponha publicamente sem proteção. A fonte é uma rota interna não documentada e pode mudar."
+    "description": "CRUD de estações e consulta do card WeatherLink. Cache de 15 minutos sob demanda, sem coleta agendada nem histórico. Dados com mais de 2 horas retornam data:null. Autenticação por X-API-Key nas rotas de estações. Use HTTPS fora do computador local. A fonte é uma rota interna não documentada e pode mudar."
   },
   "servers": [
     {
@@ -42,7 +42,8 @@
               }
             }
           }
-        }
+        },
+        "security": []
       }
     },
     "/health": {
@@ -74,7 +75,8 @@
               }
             }
           }
-        }
+        },
+        "security": []
       }
     },
     "/estacoes": {
@@ -106,6 +108,16 @@
                       "type": "integer"
                     }
                   }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "API Key ausente ou inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
                 }
               }
             }
@@ -142,6 +154,16 @@
           },
           "400": {
             "description": "Entrada inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "API Key ausente ou inválida",
             "content": {
               "application/json": {
                 "schema": {
@@ -263,6 +285,16 @@
               }
             }
           },
+          "401": {
+            "description": "API Key ausente ou inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Não encontrado",
             "content": {
@@ -305,6 +337,16 @@
           },
           "400": {
             "description": "Entrada inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "API Key ausente ou inválida",
             "content": {
               "application/json": {
                 "schema": {
@@ -433,6 +475,16 @@
               }
             }
           },
+          "401": {
+            "description": "API Key ausente ou inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Não encontrado",
             "content": {
@@ -545,6 +597,16 @@
               }
             }
           },
+          "401": {
+            "description": "API Key ausente ou inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Não encontrado",
             "content": {
@@ -608,6 +670,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Consulta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "API Key ausente ou inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
                 }
               }
             }
@@ -698,6 +770,16 @@
           },
           "400": {
             "description": "Entrada inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "API Key ausente ou inválida",
             "content": {
               "application/json": {
                 "schema": {
@@ -1016,6 +1098,19 @@
           }
         }
       }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Chave configurada em API_KEY no servidor."
+      }
     }
-  }
+  },
+  "security": [
+    {
+      "ApiKeyAuth": []
+    }
+  ]
 }

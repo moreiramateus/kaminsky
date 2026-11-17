@@ -7,8 +7,8 @@
     "node": ">=22"
   },
   "scripts": {
-    "start": "node src/server.cjs",
-    "dev": "node --watch src/server.cjs",
+    "start": "node --env-file-if-exists=.env src/server.cjs",
+    "dev": "node --env-file-if-exists=.env --watch src/server.cjs",
     "test": "node --test",
     "docs:validate": "node scripts/validate-openapi.cjs"
   },

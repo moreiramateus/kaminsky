@@ -1,8 +1,9 @@
+const API_KEY = 'teste-local-chave-segura-com-32-caracteres';
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { criarServidor } = require('../src/app.cjs');
 test('Swagger, assets locais e contrato OpenAPI', async () => {
-  const s = criarServidor();
+  const s = criarServidor({ apiKey: API_KEY });
   await new Promise(r => s.listen(0, '127.0.0.1', r));
   const base = 'http://127.0.0.1:' + s.address().port;
   try {
@@ -17,3 +18,4 @@ test('Swagger, assets locais e contrato OpenAPI', async () => {
     assert.equal((await fetch(base + '/openapi.json', {method:'POST'})).status,405);
   } finally { await new Promise(r => s.close(r)); }
 });
+

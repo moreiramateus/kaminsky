@@ -8,7 +8,7 @@ API local com cadastro persistente e consulta de dados do card. Requer Node.js 2
 npm start
 ```
 
-Base: `http://127.0.0.1:3000`. Variáveis opcionais: `HOST`, `PORT`. Sem autenticação nesta versão; mantenha local até adicionar autenticação e limites por cliente.
+Base: `http://127.0.0.1:3000`. Variáveis opcionais: `HOST`, `PORT`. Autenticação por X-API-Key obrigatória nas rotas de estações. Configure API_KEY no .env. Use HTTPS fora do ambiente local.
 
 ## Rotas
 
@@ -60,17 +60,18 @@ ID e horários acima são ilustrativos. Use os retornados pelo POST.
 ## Fluxo completo no PowerShell
 
 ```powershell
+$headers = @{ 'X-API-Key' = $env:API_KEY }
 $base = 'http://127.0.0.1:3000'
 $body = @{ weatherlink_id = '0b4bc246-d54a-47a7-8abf-cbe8ad2d882b' } | ConvertTo-Json
-$estacao = Invoke-RestMethod "$base/estacoes" -Method Post -ContentType 'application/json' -Body $body
+$estacao = Invoke-RestMethod -Headers $headers "$base/estacoes" -Method Post -ContentType 'application/json' -Body $body
 $idEstacao = $estacao.id
-Invoke-RestMethod "$base/estacoes"
-Invoke-RestMethod "$base/estacoes/$idEstacao"
-Invoke-RestMethod "$base/estacoes/$idEstacao/dados" | ConvertTo-Json -Depth 6
-Invoke-RestMethod "$base/estacoes/$idEstacao/dados?original=1" | ConvertTo-Json -Depth 6
-Invoke-RestMethod "$base/estacoes/$idEstacao" -Method Patch -ContentType 'application/json' -Body '{"habilitada":false}'
+Invoke-RestMethod -Headers $headers "$base/estacoes"
+Invoke-RestMethod -Headers $headers "$base/estacoes/$idEstacao"
+Invoke-RestMethod -Headers $headers "$base/estacoes/$idEstacao/dados" | ConvertTo-Json -Depth 6
+Invoke-RestMethod -Headers $headers "$base/estacoes/$idEstacao/dados?original=1" | ConvertTo-Json -Depth 6
+Invoke-RestMethod -Headers $headers "$base/estacoes/$idEstacao" -Method Patch -ContentType 'application/json' -Body '{"habilitada":false}'
 # Para excluir, execute:
-# Invoke-RestMethod "$base/estacoes/$idEstacao" -Method Delete
+# Invoke-RestMethod -Headers $headers "$base/estacoes/$idEstacao" -Method Delete
 ```
 
 PATCH/PUT aceitam somente `nome`, `url`, `weatherlink_id`, `habilitada`. O ID próprio é preservado ao alterar a origem. Campos desconhecidos e corpo vazio são rejeitados. Consultar dados de cadastro desabilitado retorna 409.
@@ -129,3 +130,8 @@ npm test
 O endpoint interno do WeatherLink não é uma API pública documentada: pode mudar ou exigir autenticação no futuro. O acesso deve ser validado para cada estação.
 
 Swagger interativo: /docs. Contrato OpenAPI: /openapi.json. Consulte o README da raiz para configuração e estrutura.
+
+## Autenticação
+
+Envie o cabeçalho X-API-Key em todas as rotas de estações. Ausência ou chave inválida retorna 401. Nos exemplos PowerShell, defina a variável de ambiente API_KEY no terminal; npm start carrega o .env apenas no processo servidor. Swagger: use Authorize. Saúde e documentação são públicas.
+

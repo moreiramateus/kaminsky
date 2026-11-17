@@ -1,0 +1,100 @@
+# Use sozinho: docker compose -p kaminsky-prod -f compose.production.yaml up -d --build
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: kaminsky
+      POSTGRES_PASSWORD: ${DB_ADMIN_PASSWORD:?Configure DB_ADMIN_PASSWORD}
+      APP_DB_PASSWORD: ${POSTGRES_PASSWORD:?Configure POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./deploy/init-app-user.sh:/docker-entrypoint-initdb.d/10-app-user.sh:ro
+    networks: [private]
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d kaminsky']
+      interval: 5s
+      timeout: 5s
+      retries: 15
+    logging: &logging
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
+  api:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3000
+      DATABASE_URL: postgresql://kaminsky:${POSTGRES_PASSWORD}@db:5432/kaminsky
+      API_KEY_READ: ${API_KEY_READ:?Configure API_KEY_READ}
+      API_KEY_ADMIN: ${API_KEY_ADMIN:?Configure API_KEY_ADMIN}
+      RATE_LIMIT_IP: ${RATE_LIMIT_IP:-300}
+      RATE_LIMIT_KEY: ${RATE_LIMIT_KEY:-1200}
+      TRUST_PROXY: '1'
+    networks: [edge, private]
+    read_only: true
+    tmpfs: ['/tmp']
+    cap_drop: [ALL]
+    security_opt: ['no-new-privileges:true']
+    healthcheck:
+      test: ['CMD', 'node', '-e', "fetch('http://127.0.0.1:3000/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+    logging: *logging
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN:?Configure DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL:?Configure ACME_EMAIL}
+    ports: ['80:80', '443:443', '443:443/udp']
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [edge]
+    depends_on:
+      api:
+        condition: service_healthy
+    logging: *logging
+  backup:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      PGHOST: db
+      PGUSER: postgres
+      PGDATABASE: kaminsky
+      PGPASSWORD: ${DB_ADMIN_PASSWORD:?Configure DB_ADMIN_PASSWORD}
+    entrypoint: ['/bin/sh', '/ops/backup-loop.sh']
+    volumes:
+      - ./deploy:/ops:ro
+      - backups:/backups
+    networks: [private]
+    depends_on:
+      db:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'test -f /backups/last-success && test $$(($$(date +%s) - $$(cat /backups/last-success))) -lt 90000']
+      interval: 1m
+      timeout: 5s
+      start_period: 5m
+      retries: 3
+    logging: *logging
+networks:
+  edge:
+  private:
+    internal: true
+volumes:
+  postgres_data:
+  backups:
+  caddy_data:
+  caddy_config:

@@ -1,6 +1,7 @@
 function memoryRepository() {
   const rows=new Map();
   return {
+    async verificar(){},
     async listar(){return [...rows.values()];},
     async obter(id){return rows.get(id);},
     async criar(r){if([...rows.values()].some(x=>x.weatherlink_id===r.weatherlink_id))throw Object.assign(new Error('Estação já cadastrada.'),{status:409});rows.set(r.id,r);return r;},

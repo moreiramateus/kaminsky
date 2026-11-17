@@ -137,3 +137,7 @@ Envie o cabeçalho X-API-Key em todas as rotas de estações. Ausência ou chave
 
 
 Leitura: API_KEY_READ permite GET. Administração: API_KEY_ADMIN permite GET, POST, PUT, PATCH e DELETE. Envie uma chave por vez no cabeçalho X-API-Key. Escrita com chave de leitura retorna 403. A configuração antiga API_KEY foi removida. As duas novas chaves são obrigatórias e diferentes.
+
+## Operação
+
+Todas as rotas estão sujeitas a 429 e Retry-After. X-Request-Id identifica a requisição nos logs. /ready é público e consulta o banco (200 ou 503). Limites padrão: 300/min/IP e 1200/min/chave, por instância. Veja production.md.

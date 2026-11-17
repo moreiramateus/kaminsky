@@ -8,3 +8,6 @@ estacoes.json
 *.tmp
 *.log
 coverage/
+backups/
+*.dump
+*.dump.sha256

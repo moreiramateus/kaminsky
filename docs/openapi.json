@@ -41,6 +41,24 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "Limite excedido",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até nova tentativa",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
           }
         },
         "security": []
@@ -71,6 +89,24 @@
                       ]
                     }
                   }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite excedido",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até nova tentativa",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
                 }
               }
             }
@@ -114,6 +150,24 @@
           },
           "401": {
             "description": "API Key ausente ou inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite excedido",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até nova tentativa",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -232,6 +286,24 @@
               }
             }
           },
+          "429": {
+            "description": "Limite excedido",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até nova tentativa",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Erro de persistência",
             "content": {
@@ -322,6 +394,24 @@
           },
           "404": {
             "description": "Não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite excedido",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até nova tentativa",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -432,6 +522,24 @@
           },
           "415": {
             "description": "Envie application/json",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite excedido",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até nova tentativa",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -585,6 +693,24 @@
               }
             }
           },
+          "429": {
+            "description": "Limite excedido",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até nova tentativa",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Erro de persistência",
             "content": {
@@ -684,6 +810,24 @@
           },
           "404": {
             "description": "Não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite excedido",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até nova tentativa",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -794,6 +938,24 @@
               }
             }
           },
+          "429": {
+            "description": "Limite excedido",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até nova tentativa",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
           "502": {
             "description": "Fonte indisponível ou inválida",
             "content": {
@@ -888,6 +1050,24 @@
               }
             }
           },
+          "429": {
+            "description": "Limite excedido",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até nova tentativa",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
           "502": {
             "description": "Fonte indisponível ou inválida",
             "content": {
@@ -917,6 +1097,42 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/ready": {
+      "get": {
+        "tags": [
+          "Sistema"
+        ],
+        "operationId": "ready",
+        "summary": "Verifica processo e acesso à tabela no PostgreSQL",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Banco disponível"
+          },
+          "429": {
+            "description": "Limite excedido",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até nova tentativa",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Banco indisponível"
           }
         }
       }

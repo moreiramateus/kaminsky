@@ -9,11 +9,12 @@
   "scripts": {
     "start": "node --env-file-if-exists=.env src/server.cjs",
     "dev": "node --env-file-if-exists=.env --watch src/server.cjs",
-    "test": "node --test test/api.test.cjs test/auth.test.cjs test/stations.test.cjs test/swagger.test.cjs test/postgres.test.cjs",
+    "test": "node --test test/api.test.cjs test/auth.test.cjs test/stations.test.cjs test/swagger.test.cjs test/postgres.test.cjs test/operations.test.cjs",
     "docs:validate": "node scripts/validate-openapi.cjs",
     "db:migrate": "node --env-file-if-exists=.env scripts/migrate.cjs",
     "db:import": "node --env-file-if-exists=.env scripts/import-json.cjs",
-    "test:db": "node --env-file-if-exists=.env scripts/test-db.cjs"
+    "test:db": "node --env-file-if-exists=.env scripts/test-db.cjs",
+    "test:load": "node scripts/load-smoke.cjs"
   },
   "scarfSettings": {
     "enabled": false

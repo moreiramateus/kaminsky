@@ -131,3 +131,7 @@ npm run docs:validate
 ```
 
 O teste de banco usa registros com UUIDs aleatórios e remove somente esses registros. O CI executa o teste em PostgreSQL real. Cache permanece em memória por instância, por 15 minutos; não há tabelas de medições nem histórico.
+
+## Produção
+
+[Guia de publicação e operação](docs/production.md): HTTPS, limites, logs, healthchecks, backup com restauração de teste e pendências da hospedagem. Use compose.production.yaml separadamente da configuração local. Execute npm run test:load para carga simulada, sem consultas à fonte real.

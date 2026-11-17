@@ -16,6 +16,7 @@ class StationRepository {
     }
   }
   async migrar() { await this.executar(fs.readFileSync(path.join(__dirname,'../migrations/001_stations.sql'),'utf8')); }
+  async verificar(){await this.executar('SELECT 1 FROM estacoes LIMIT 1');}
   async listar() { return (await this.executar('SELECT * FROM estacoes ORDER BY criado_em, id')).rows.map(normalizar); }
   async obter(id) { return normalizar((await this.executar('SELECT * FROM estacoes WHERE id=$1',[id])).rows[0]); }
   async criar(r) { return normalizar((await this.executar('INSERT INTO estacoes (id,weatherlink_id,nome,habilitada,criado_em,atualizado_em) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *',[r.id,r.weatherlink_id,r.nome,r.habilitada,r.criado_em,r.atualizado_em])).rows[0]); }

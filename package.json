@@ -1,0 +1,24 @@
+{
+  "name": "kaminsky-weather-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "API de cadastro de estações e consulta normalizada de dados WeatherLink",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node src/server.cjs",
+    "dev": "node --watch src/server.cjs",
+    "test": "node --test",
+    "docs:validate": "node scripts/validate-openapi.cjs"
+  },
+  "scarfSettings": {
+    "enabled": false
+  },
+  "dependencies": {
+    "swagger-ui-dist": "5.35.0"
+  },
+  "devDependencies": {
+    "@apidevtools/swagger-parser": "13.0.0"
+  }
+}

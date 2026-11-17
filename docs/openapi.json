@@ -1,0 +1,1021 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Kaminsky Weather API",
+    "version": "1.0.0",
+    "description": "CRUD de estações e consulta do card WeatherLink. Cache de 15 minutos sob demanda, sem coleta agendada nem histórico. Dados com mais de 2 horas retornam data:null. API local de estudo, sem autenticação; não exponha publicamente sem proteção. A fonte é uma rota interna não documentada e pode mudar."
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "Servidor atual"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Sistema"
+    },
+    {
+      "name": "Estações"
+    },
+    {
+      "name": "Dados"
+    }
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "tags": [
+          "Sistema"
+        ],
+        "operationId": "inicio",
+        "summary": "Informações e links da API",
+        "responses": {
+          "200": {
+            "description": "Informações",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "Sistema"
+        ],
+        "operationId": "health",
+        "summary": "Saúde do processo (não verifica a fonte)",
+        "responses": {
+          "200": {
+            "description": "Processo disponível",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "ok"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/estacoes": {
+      "get": {
+        "tags": [
+          "Estações"
+        ],
+        "operationId": "listarEstacoes",
+        "summary": "Listar cadastros persistidos",
+        "responses": {
+          "200": {
+            "description": "Lista",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "total"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Estacao"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Estações"
+        ],
+        "operationId": "cadastrarEstacao",
+        "summary": "Cadastrar estação e gerar ID próprio",
+        "description": "Valida a origem antes de salvar. Uma origem por cadastro.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CadastroEntrada"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Cadastro salvo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Estacao"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Entrada inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Duplicidade, desabilitada ou conflito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo maior que 16 KB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Envie application/json",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro de persistência",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Fonte indisponível ou inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Limite de consultas simultâneas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Tempo limite da fonte",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/estacoes/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "description": "ID próprio retornado pelo cadastro, não o UUID WeatherLink.",
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "tags": [
+          "Estações"
+        ],
+        "operationId": "obterCadastro",
+        "summary": "Consultar cadastro",
+        "responses": {
+          "200": {
+            "description": "Cadastro",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Estacao"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Estações"
+        ],
+        "operationId": "editarEstacao",
+        "summary": "Editar cadastro",
+        "description": "Atualização parcial: preserva campos não enviados e o ID próprio. PUT é alias de PATCH nesta versão.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EdicaoEntrada"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Cadastro salvo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Estacao"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Entrada inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Duplicidade, desabilitada ou conflito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo maior que 16 KB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Envie application/json",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro de persistência",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Fonte indisponível ou inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Limite de consultas simultâneas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Tempo limite da fonte",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Estações"
+        ],
+        "operationId": "atualizarEstacao",
+        "summary": "Editar cadastro (alias de PATCH)",
+        "description": "Atualização parcial: preserva campos não enviados e o ID próprio. PUT é alias de PATCH nesta versão.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EdicaoEntrada"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Cadastro salvo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Estacao"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Entrada inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Duplicidade, desabilitada ou conflito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo maior que 16 KB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Envie application/json",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro de persistência",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Fonte indisponível ou inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Limite de consultas simultâneas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Tempo limite da fonte",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Estações"
+        ],
+        "operationId": "excluirEstacao",
+        "summary": "Excluir cadastro local",
+        "responses": {
+          "200": {
+            "description": "Excluída",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "excluida"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "excluida": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro de persistência",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/estacoes/{id}/dados": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "description": "ID próprio retornado pelo cadastro, não o UUID WeatherLink.",
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "tags": [
+          "Dados"
+        ],
+        "operationId": "consultarDados",
+        "summary": "Consultar dados normalizados pelo ID próprio",
+        "description": "Temperatura em Celsius, chuva do dia em mm, vento em m/s e pressão em hPa. Não é chuva móvel de 24 horas. Conversões não recuperam a precisão perdida na fonte. habilitada=false retorna 409; ativa=false retorna data:null.",
+        "parameters": [
+          {
+            "name": "original",
+            "in": "query",
+            "description": "1 inclui o JSON original em original.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Medições",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Consulta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Duplicidade, desabilitada ou conflito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Fonte indisponível ou inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Limite de consultas simultâneas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Tempo limite da fonte",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/estacoes/{weatherlink_uuid}/chuva": {
+      "get": {
+        "tags": [
+          "Dados"
+        ],
+        "operationId": "consultaLegada",
+        "summary": "Consulta direta por UUID WeatherLink",
+        "deprecated": true,
+        "description": "Compatibilidade: independente do cadastro e da opção habilitada. Retorna a fonte original em data, sem normalização.",
+        "parameters": [
+          {
+            "name": "weatherlink_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resposta original",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsultaLegada"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Entrada inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Fonte indisponível ou inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Limite de consultas simultâneas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Tempo limite da fonte",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Erro": {
+        "type": "object",
+        "required": [
+          "erro"
+        ],
+        "properties": {
+          "erro": {
+            "type": "string"
+          }
+        }
+      },
+      "CadastroEntrada": {
+        "type": "object",
+        "additionalProperties": false,
+        "minProperties": 1,
+        "properties": {
+          "nome": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150
+          },
+          "weatherlink_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://www.weatherlink.com/map/0b4bc246-d54a-47a7-8abf-cbe8ad2d882b"
+          },
+          "habilitada": {
+            "type": "boolean",
+            "default": true
+          }
+        },
+        "anyOf": [
+          {
+            "required": [
+              "url"
+            ]
+          },
+          {
+            "required": [
+              "weatherlink_id"
+            ]
+          }
+        ]
+      },
+      "EdicaoEntrada": {
+        "type": "object",
+        "additionalProperties": false,
+        "minProperties": 1,
+        "properties": {
+          "nome": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150
+          },
+          "weatherlink_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://www.weatherlink.com/map/0b4bc246-d54a-47a7-8abf-cbe8ad2d882b"
+          },
+          "habilitada": {
+            "type": "boolean",
+            "default": true
+          }
+        }
+      },
+      "Estacao": {
+        "type": "object",
+        "required": [
+          "id",
+          "weatherlink_id",
+          "nome",
+          "habilitada",
+          "criado_em",
+          "atualizado_em"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "weatherlink_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "habilitada": {
+            "type": "boolean"
+          },
+          "criado_em": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "atualizado_em": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "DadosNormalizados": {
+        "type": "object",
+        "nullable": true,
+        "properties": {
+          "temperatura_c": {
+            "type": "number",
+            "nullable": true
+          },
+          "umidade_pct": {
+            "type": "number",
+            "nullable": true
+          },
+          "chuva_dia_mm": {
+            "type": "number",
+            "nullable": true
+          },
+          "vento_ms": {
+            "type": "number",
+            "nullable": true
+          },
+          "vento_direcao_graus": {
+            "type": "number",
+            "nullable": true
+          },
+          "pressao_hpa": {
+            "type": "number",
+            "nullable": true
+          },
+          "pressao_tendencia_codigo": {
+            "type": "number",
+            "nullable": true
+          },
+          "latitude": {
+            "type": "number",
+            "nullable": true
+          },
+          "longitude": {
+            "type": "number",
+            "nullable": true
+          },
+          "qualidade_ar": {
+            "type": "object",
+            "properties": {
+              "indice": {
+                "type": "number",
+                "nullable": true
+              },
+              "tipo": {
+                "nullable": true
+              },
+              "severidade": {
+                "nullable": true
+              }
+            }
+          },
+          "conversao_aproximada": {
+            "type": "boolean",
+            "description": "Valores convertidos podem partir de números arredondados pela fonte."
+          }
+        }
+      },
+      "Consulta": {
+        "type": "object",
+        "required": [
+          "id",
+          "nome",
+          "weatherlink_id",
+          "ativa",
+          "atualizado_em",
+          "consultado_em",
+          "idade_segundos",
+          "cache",
+          "data"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "weatherlink_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ativa": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "atualizado_em": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "consultado_em": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "idade_segundos": {
+            "type": "integer",
+            "nullable": true
+          },
+          "cache": {
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/components/schemas/DadosNormalizados"
+          },
+          "original": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": true
+          }
+        }
+      },
+      "ConsultaLegada": {
+        "type": "object",
+        "properties": {
+          "estacao_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "ativa": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "atualizado_em": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "consultado_em": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "idade_segundos": {
+            "type": "integer",
+            "nullable": true
+          },
+          "cache": {
+            "type": "boolean"
+          },
+          "motivo": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": true
+          }
+        }
+      }
+    }
+  }
+}

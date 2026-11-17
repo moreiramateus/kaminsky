@@ -3,7 +3,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { criarServidor } = require('../src/app.cjs');
 test('Swagger, assets locais e contrato OpenAPI', async () => {
-  const s = criarServidor({ apiKey: API_KEY });
+  const s = criarServidor({ adminApiKey: API_KEY, readApiKey: API_KEY + '-read' });
   await new Promise(r => s.listen(0, '127.0.0.1', r));
   const base = 'http://127.0.0.1:' + s.address().port;
   try {
@@ -18,4 +18,3 @@ test('Swagger, assets locais e contrato OpenAPI', async () => {
     assert.equal((await fetch(base + '/openapi.json', {method:'POST'})).status,405);
   } finally { await new Promise(r => s.close(r)); }
 });
-

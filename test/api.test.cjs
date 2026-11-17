@@ -5,7 +5,7 @@ const { criarServidor } = require('../src/app.cjs');
 const ID = '0b4bc246-d54a-47a7-8abf-cbe8ad2d882b';
 test('dados originais, cache, atraso e erros HTTP', async () => {
   let tempo = 1800000000000, chamadas = 0, falhar = false;
-  const servidor = criarServidor({ apiKey: API_KEY, agora: () => tempo, consultar: async () => {
+  const servidor = criarServidor({ adminApiKey: API_KEY, readApiKey: API_KEY + '-read', agora: () => tempo, consultar: async () => {
     chamadas++;
     if (falhar) throw new Error('falha simulada');
     return { ok: true, json: async () => ({ sStation: 'Teste', dailyRain: '0.06', rainUnit: 'in', temperature: '78', temperatureUnit: '&deg;F', humidity: '69', lastTimestamp: 1799999900 }) };
@@ -29,4 +29,3 @@ test('dados originais, cache, atraso e erros HTTP', async () => {
     assert.equal((await fetch(rota, { headers: { 'X-API-Key': API_KEY } })).status, 502);
   } finally { await new Promise(resolve => servidor.close(resolve)); }
 });
-

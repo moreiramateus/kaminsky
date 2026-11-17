@@ -3,7 +3,7 @@
   "info": {
     "title": "Kaminsky Weather API",
     "version": "1.0.0",
-    "description": "CRUD de estações e consulta do card WeatherLink. Cache de 15 minutos sob demanda, sem coleta agendada nem histórico. Dados com mais de 2 horas retornam data:null. Autenticação por X-API-Key nas rotas de estações. Use HTTPS fora do computador local. A fonte é uma rota interna não documentada e pode mudar."
+    "description": "CRUD de estações e consulta do card WeatherLink. Cache de 15 minutos sob demanda, sem coleta agendada nem histórico. Dados com mais de 2 horas retornam data:null. Autenticação por X-API-Key nas rotas de estações. Use HTTPS fora do computador local. A fonte é uma rota interna não documentada e pode mudar. Leitura e administração usam chaves distintas no cabeçalho X-API-Key."
   },
   "servers": [
     {
@@ -172,6 +172,16 @@
               }
             }
           },
+          "403": {
+            "description": "Exige chave administrativa",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Não encontrado",
             "content": {
@@ -252,7 +262,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "AdminApiKey": []
+          }
+        ]
       }
     },
     "/estacoes/{id}": {
@@ -355,6 +370,16 @@
               }
             }
           },
+          "403": {
+            "description": "Exige chave administrativa",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Não encontrado",
             "content": {
@@ -435,7 +460,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "AdminApiKey": []
+          }
+        ]
       },
       "put": {
         "tags": [
@@ -485,6 +515,16 @@
               }
             }
           },
+          "403": {
+            "description": "Exige chave administrativa",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Não encontrado",
             "content": {
@@ -565,7 +605,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "AdminApiKey": []
+          }
+        ]
       },
       "delete": {
         "tags": [
@@ -607,6 +652,16 @@
               }
             }
           },
+          "403": {
+            "description": "Exige chave administrativa",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Não encontrado",
             "content": {
@@ -627,7 +682,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "AdminApiKey": []
+          }
+        ]
       }
     },
     "/estacoes/{id}/dados": {
@@ -1100,17 +1160,26 @@
       }
     },
     "securitySchemes": {
-      "ApiKeyAuth": {
+      "ReadApiKey": {
         "type": "apiKey",
         "in": "header",
         "name": "X-API-Key",
-        "description": "Chave configurada em API_KEY no servidor."
+        "description": "API_KEY_READ: consultas GET."
+      },
+      "AdminApiKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "API_KEY_ADMIN: consultas e cadastro."
       }
     }
   },
   "security": [
     {
-      "ApiKeyAuth": []
+      "ReadApiKey": []
+    },
+    {
+      "AdminApiKey": []
     }
   ]
 }

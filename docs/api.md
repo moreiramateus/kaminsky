@@ -8,7 +8,7 @@ API local com cadastro persistente e consulta de dados do card. Requer Node.js 2
 npm start
 ```
 
-Base: `http://127.0.0.1:3000`. Variáveis opcionais: `HOST`, `PORT`. Autenticação por X-API-Key obrigatória nas rotas de estações. Configure API_KEY no .env. Use HTTPS fora do ambiente local.
+Base: `http://127.0.0.1:3000`. Variáveis opcionais: `HOST`, `PORT`. Autenticação por X-API-Key obrigatória nas rotas de estações. Configure API_KEY_READ e API_KEY_ADMIN no .env. Use HTTPS fora do ambiente local.
 
 ## Rotas
 
@@ -60,7 +60,7 @@ ID e horários acima são ilustrativos. Use os retornados pelo POST.
 ## Fluxo completo no PowerShell
 
 ```powershell
-$headers = @{ 'X-API-Key' = $env:API_KEY }
+$headers = @{ 'X-API-Key' = $env:API_KEY_ADMIN }
 $base = 'http://127.0.0.1:3000'
 $body = @{ weatherlink_id = '0b4bc246-d54a-47a7-8abf-cbe8ad2d882b' } | ConvertTo-Json
 $estacao = Invoke-RestMethod -Headers $headers "$base/estacoes" -Method Post -ContentType 'application/json' -Body $body
@@ -133,5 +133,7 @@ Swagger interativo: /docs. Contrato OpenAPI: /openapi.json. Consulte o README da
 
 ## Autenticação
 
-Envie o cabeçalho X-API-Key em todas as rotas de estações. Ausência ou chave inválida retorna 401. Nos exemplos PowerShell, defina a variável de ambiente API_KEY no terminal; npm start carrega o .env apenas no processo servidor. Swagger: use Authorize. Saúde e documentação são públicas.
+Envie o cabeçalho X-API-Key em todas as rotas de estações. Ausência ou chave inválida retorna 401. Nos exemplos PowerShell, defina a variável de ambiente API_KEY_ADMIN no terminal; npm start carrega o .env apenas no processo servidor. Swagger: use Authorize. Saúde e documentação são públicas.
 
+
+Leitura: API_KEY_READ permite GET. Administração: API_KEY_ADMIN permite GET, POST, PUT, PATCH e DELETE. Envie uma chave por vez no cabeçalho X-API-Key. Escrita com chave de leitura retorna 403. A configuração antiga API_KEY foi removida. As duas novas chaves são obrigatórias e diferentes.

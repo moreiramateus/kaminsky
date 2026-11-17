@@ -6,8 +6,8 @@ const autenticar = require('./auth.cjs');
 const UUID = /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
 const TTL = 15 * 60 * 1000;
 
-function criarServidor({ consultar = fetch, agora = Date.now, apiKey = process.env.API_KEY, arquivo = process.env.DATA_FILE || path.join(__dirname, '..', 'data', 'estacoes.json') } = {}) {
-  const autorizado = autenticar(apiKey);
+function criarServidor({ consultar = fetch, agora = Date.now, readApiKey = process.env.API_KEY_READ, adminApiKey = process.env.API_KEY_ADMIN, arquivo = process.env.DATA_FILE || path.join(__dirname, '..', 'data', 'estacoes.json') } = {}) {
+  const autorizado = autenticar({ readApiKey, adminApiKey });
   const cache = new Map();
   const pendentes = new Map();
   async function obter(id) {
@@ -53,9 +53,13 @@ function criarServidor({ consultar = fetch, agora = Date.now, apiKey = process.e
     try {
       const url = new URL(req.url, 'http://localhost');
       const publica = ['/', '/health', '/docs', '/docs/', '/openapi.json', '/docs/swagger-ui.css', '/docs/swagger-ui-bundle.js'].includes(url.pathname);
-      if (!publica && !autorizado(req)) {
-        res.setHeader('WWW-Authenticate', 'ApiKey realm="kaminsky"');
-        return enviar(401, { erro: 'API Key ausente ou inválida. Envie X-API-Key.' });
+      if (!publica) {
+        const perfil = autorizado(req);
+        if (!perfil) {
+          res.setHeader('WWW-Authenticate', 'ApiKey realm="kaminsky"');
+          return enviar(401, { erro: 'API Key ausente ou inválida. Envie X-API-Key.' });
+        }
+        if (perfil === 'read' && req.method !== 'GET') return enviar(403, { erro: 'Esta operação exige a chave administrativa.' });
       }
       if (swagger(req, url, res)) return;
       if (await gerenciar(req, url, enviar)) return;

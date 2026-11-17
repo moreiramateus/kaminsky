@@ -8,7 +8,7 @@ Requer Node.js 22 ou superior.
 
 ```sh
 npm ci --ignore-scripts
-# Configure API_KEY no .env antes de iniciar
+# Configure API_KEY_READ e API_KEY_ADMIN no .env antes de iniciar
 npm start
 ```
 
@@ -26,7 +26,7 @@ O Swagger UI é servido localmente pelo pacote instalado, sem CDN nem envio do c
 | PORT | 3000 | Porta |
 | DATA_FILE | data/estacoes.json | Arquivo persistente de cadastro |
 
-Copie `.env.example` para `.env` e defina uma API_KEY aleatória. npm start carrega o .env automaticamente; variáveis já exportadas têm precedência.
+Copie `.env.example` para `.env` e defina API_KEY_READ e API_KEY_ADMIN aleatórias e diferentes. npm start carrega o .env automaticamente; variáveis já exportadas têm precedência.
 
 ## Uso
 
@@ -76,20 +76,31 @@ Use uma única instância por arquivo de cadastro. Faça backup do volume antes 
 
 ## Limites atuais
 
-- API Key compartilhada entre clientes autorizados. Use HTTPS e limites de uso antes de publicar. A configuração padrão é local.
+- Duas chaves compartilhadas por perfil (leitura e administração). Use HTTPS e limites de uso antes de publicar. A configuração padrão é local.
 - Cache de 15 minutos sob demanda, sem agendamento nem histórico. Dados com mais de 2 horas são sinalizados como atrasados e as medições são omitidas.
 - O endpoint do WeatherLink é interno e não documentado, podendo mudar ou exigir autenticação. O acesso varia por estação.
 - Chuva do dia não é acumulado móvel de 24 horas. Conversão de valores arredondados não recupera a precisão original.
 - Nenhuma senha, sessão, cadastro real ou captura do celular está incluída no projeto.
 
-## Autenticação
+## Autenticação e permissões
 
-Todas as rotas de estações exigem `X-API-Key`, inclusive consultas, CRUD e a rota antiga `/chuva`. Chave ausente ou inválida retorna 401. Não envie a chave na URL. `/`, `/health`, `/docs` e `/openapi.json` são públicos.
+Envie uma única chave no cabeçalho `X-API-Key`:
 
-Configure `API_KEY` no `.env` local com 32 a 256 caracteres ASCII sem espaços. Gere uma chave aleatória:
+| Configuração | Permissão |
+|---|---|
+| API_KEY_READ | Consultas GET de cadastros e medições |
+| API_KEY_ADMIN | Consultas e cadastro, edição e exclusão |
+
+As duas variáveis são obrigatórias e devem ter valores diferentes, com 32 a 256 caracteres ASCII sem espaços. A variável antiga API_KEY não é mais aceita. Chave ausente ou inválida retorna 401; chave de leitura tentando escrever retorna 403. A API recusa iniciar sem configuração válida.
+
+Gere cada chave separadamente:
 
 ```sh
 node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
 ```
 
-No Swagger, clique em **Authorize**, informe somente a chave e confirme. A chave não é persistida pelo Swagger entre recarregamentos. Nunca publique o `.env` nem a chave no repositório. Para trocar a chave, altere API_KEY e reinicie o servidor; a chave anterior deixa de funcionar. Esta versão usa uma única chave compartilhada, sem usuários ou permissões por cliente. O processo recusa iniciar sem configuração válida.
+Guarde em `.env` (ignorado pelo Git), ou nos segredos da hospedagem. npm start carrega o .env. Nunca use chaves em URLs, logs ou código de frontend público. Use HTTPS fora do ambiente local.
+
+Swagger: clique em Authorize e preencha apenas um dos perfis por vez. Ambos usam o mesmo cabeçalho; não autorize os dois simultaneamente. A chave administrativa também funciona em GET. O Swagger não persiste a chave entre recarregamentos.
+
+`/`, `/health`, `/docs` e `/openapi.json` são públicos. Todas as rotas de estações, inclusive a rota antiga `/chuva`, exigem autenticação. Para revogar ou trocar uma chave, altere a variável correspondente e reinicie. Esta versão tem uma chave por perfil, sem usuários individuais ou auditoria por cliente.
